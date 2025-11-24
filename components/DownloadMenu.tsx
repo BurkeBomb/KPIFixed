@@ -1,8 +1,10 @@
 'use client';
 import { Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+import JSZip from 'jszip'; // imported for potential side-effects; not used directly in this component
+// We intentionally avoid importing from `file-saver`.  Vercel's TypeScript build
+// complained about missing type declarations for this package.  Instead,
+// we'll reuse the `trigger` helper below to download the generated ZIP.
 import { buildEvidenceZip } from '@/lib/evidence';
 import { buildBulkNotesCSV, buildPMBOnlyCSV, buildAuditTrailCSV } from '@/lib/exports';
 
@@ -43,7 +45,10 @@ export function DownloadMenu({ fileNameBase, kpis, pmbKpis, allRows, filteredRow
   const buildEvidence = async () => {
     const zip = await buildEvidenceZip(filteredRows);
     const blob = await zip.generateAsync({ type:'blob' });
-    saveAs(blob, `${fileNameBase}-evidence.zip`);
+    // Use our generic trigger helper to download the ZIP. We specify
+    // 'application/zip' as the MIME type for clarity. This avoids the
+    // `file-saver` dependency while preserving the user experience.
+    trigger(blob, `${fileNameBase}-evidence.zip`, 'application/zip');
   };
 
   return (

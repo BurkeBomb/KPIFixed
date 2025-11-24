@@ -11,7 +11,7 @@
   "dependencies": {
     "clsx": "2.1.1",
     "docx": "8.5.0",
-    "file-saver": "2.0.5",
+    // Removed `file-saver` because we now implement our own blob download helpers.
     "jszip": "3.10.1",
     "lucide-react": "0.451.0",
     "next": "15.5.6",

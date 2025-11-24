@@ -1,6 +1,33 @@
 'use client';
 import { Card } from './Card';
-import { saveAs } from 'file-saver';
+// We intentionally avoid importing from the `file-saver` package here.  
+// When building this project with TypeScript, Vercel complained that there were no 
+// type declarations for `file-saver`.  To work around that without bringing in 
+// additional dev dependencies or custom type definitions, we implement a small
+// helper that replicates the `saveAs` functionality.  See
+// https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL for details.
+/**
+ * Trigger a browser download of a Blob by creating a temporary link and
+ * programmatically clicking it.  After the download starts, the object URL
+ * is revoked to free up resources.  This mirrors the behaviour of the
+ * `saveAs` function from the `file-saver` library.
+ *
+ * @param blob The Blob to save
+ * @param filename The desired name of the downloaded file
+ */
+function saveBlobAs(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  try {
+    link.click();
+  } finally {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+}
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 function toDocx(content:string){
@@ -17,7 +44,9 @@ const templates = {
 export function AppealsGenerator(){
   const build = async (key: keyof typeof templates) => {
     const blob = await toDocx(templates[key]);
-    saveAs(blob, `${key}-appeal.docx`);
+    // Use the helper above instead of `saveAs` from file‑saver.  This avoids
+    // runtime dependencies that lack TypeScript type declarations.
+    saveBlobAs(blob, `${key}-appeal.docx`);
   };
   return (
     <Card>
